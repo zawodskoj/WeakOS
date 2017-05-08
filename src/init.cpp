@@ -1,5 +1,5 @@
 #include <init.h>
-#include <stdio.h>
+#include <ustdio.h>
 
 #include <os/paging.h>
 #include <os/keyboard.h>

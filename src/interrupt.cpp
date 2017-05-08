@@ -1,7 +1,7 @@
 #include <os/interrupt.h>
 #include <os/pic.h>
 #include <os/io.h>
-#include <stdio.h>
+#include <ustdio.h>
 
 int_handler interrupt::m_ints[IDT_ENTRY_COUNT];
 int_error_handler interrupt::m_errs[IDT_ENTRY_COUNT];
@@ -9,8 +9,8 @@ irq_handler interrupt::m_irqs[IRQ_COUNT];
 
 template <int Interrupt, handler_type Type> struct internal_handler {
 public:
-    static void __attribute__ ((interrupt)) handler(void *unused) {
-        stdio::printf("_int %d_", Interrupt);
+    static void __attribute__ ((interrupt)) handler(uint32_t *unused) {
+        stdio::printf("_int %d_ at %x\n", Interrupt, *unused);
         if (interrupt::m_ints[Interrupt]) interrupt::m_ints[Interrupt](Interrupt);
     }
 };
@@ -86,11 +86,11 @@ void interrupt::init(idt_info *info) {
     
     fill_int<0, 15, handler_type::irq>::go(info->entries);
     
-    /*__asm__ volatile ( "lidt %0\n\
+    __asm__ volatile ( "lidt %0\n\
                         in $0x70, %%al\n\
                         and $0x7f, %%al\n\
                         out %%al, $0x70\n\
-                        sti\n" :: "m"(info->idtr));*/
+                        sti\n" :: "m"(info->idtr));
 }
 
 void interrupt::map_irq(int irq, irq_handler handler) {

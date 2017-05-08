@@ -1,6 +1,6 @@
 #include <os/liballoc.h>
 #include <os/memory.h>
-#include <stdio.h>
+#include <ustdio.h>
 
 int liballoc_lock() { return 0; }
 int liballoc_unlock() { return 0; }

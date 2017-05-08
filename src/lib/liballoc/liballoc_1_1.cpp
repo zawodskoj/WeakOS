@@ -1,4 +1,4 @@
-#include "../../src/liballoc/liballoc_1_1.h"
+#include "liballoc_1_1.h"
 
 /**  Durand's Amazing Super Duper Memory functions.  */
 
@@ -51,7 +51,7 @@
 #define INFO
 
 #if defined DEBUG || defined INFO
-#include <stdio.h>
+#include <ustdio.h>
 #include <stdlib.h>
 
 #define FLUSH()	

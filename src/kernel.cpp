@@ -2,8 +2,10 @@
 
 #include <cpp.h>
 #include <init.h>
-#include <stdio.h>
+#include <ustdio.h>
 #include <os/memory.h>
+
+#include <cstdio>
 
 #include "malloc_test.inc"
 

@@ -1,6 +1,6 @@
 #include <os/memory.h>
 #include <os/paging.h>
-#include <stdio.h>
+#include <ustdio.h>
 
 void* memset(void *ptr, int v, size_t size) {
     uint8_t value = v;

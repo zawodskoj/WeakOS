@@ -1,7 +1,7 @@
 #include <os/keyboard.h>
 #include <os/interrupt.h>
 #include <os/io.h>
-#include <stdio.h>
+#include <ustdio.h>
 
 #define PS2_PORT_DATA 0x60
 #define PS2_PORT_COMMAND 0x64
