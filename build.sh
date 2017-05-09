@@ -11,7 +11,7 @@ yasm src/bootloader/stage2.asm -I src/bootloader/ -o bin/stage2
 
 # собираем abi
 cd obj/abi
-clang++ ../../src/abi/cpp/*.cpp --std=c++14 -m32 -mno-sse -c -I ../../src/include\
+clang++ ../../src/abi/cpp/*.cpp ../../src/abi/cpp/*.s --std=c++14 -m32 -mno-sse -c -I ../../src/include\
 	-fno-exceptions -fno-rtti -Wall
 cd ../..
 ld -m elf_i386 -o bin/abi.o -r obj/abi/*.o
@@ -31,7 +31,17 @@ cd obj/kernel
 clang++ ../../src/*.cpp --std=c++14 -m32 -mno-sse -c -I ../../src/include/ -g\
 	-fno-exceptions -fno-rtti -Wall
 cd ../..
-ld -m elf_i386 -o bin/kernel bin/abi.o bin/lib/*.o obj/kernel/*.o -e k_main -T src/kernel.ld # -lgcc
+ld -m elf_i386 -o bin/kernel \
+    obj/abi/crti.o\
+    `clang -m32 -print-file-name=crtbegin.o`\
+    obj/kernel/*.o\
+    obj/abi/cxa.o obj/abi/new.o obj/abi/integer.o\
+    bin/lib/*.o\
+    `clang -m32 -print-file-name=crtend.o`\
+    obj/abi/crtn.o\
+    -T src/kernel.ld \
+    -nostdlib -L/usr/lib/gcc/i686-linux-gnu/5 -lgcc
+
 # strip bin/kernel
 
 # собираем стдлибу

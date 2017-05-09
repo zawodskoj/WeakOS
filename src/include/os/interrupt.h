@@ -20,13 +20,13 @@ typedef struct __attribute__ ((packed)) {
 #define IRQ_COUNT 16
 
 typedef struct {
-    idtr idtr;
+    idtr reg;
     idt_entry entries[IDT_ENTRY_COUNT];
 } idt_info;
 
 typedef void (*int_handler) (int interrupt);
 typedef void (*int_error_handler) (int interrupt, uint32_t error);
-typedef void (*irq_handler) (int irq);
+typedef void (*irq_handler) (int irq, uint32_t eip);
 
 enum struct handler_type { int_noerr, int_err, irq };
 
@@ -37,13 +37,25 @@ private:
     static int_handler m_ints[IDT_ENTRY_COUNT];
     static int_error_handler m_errs[IDT_ENTRY_COUNT];
     static irq_handler m_irqs[IRQ_COUNT];
+    static bool m_irq_triggered[IRQ_COUNT];
 
     template <int IRQ> static void __attribute__ ((interrupt)) irq_handler_internal(void *unused);
     
-    template <int Interrupt, handler_type Type> friend class internal_handler;
+    template <int Interrupt, handler_type Type> friend struct internal_handler;
 public:
     static void init(idt_info *info);
     static void map(int interrupt, int_handler handler);
     static void map(int interrupt, int_error_handler handler);
     static void map_irq(int irq, irq_handler handler);
+    
+    static void wait_irq(int irq);
 };
+
+inline int get_ring() {
+    uint16_t ss;
+    
+    asm volatile ( "mov %%ss, %%ax\n"
+                   "mov %%ax, %0\n": "=r"(ss) );
+    
+    return ss & 3;
+}

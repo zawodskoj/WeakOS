@@ -138,7 +138,7 @@ typedef struct {
 void dispatch_scancode(ps2_scancode scancode, bool shift) {
     if (scancode.type != PS2_SCANCODE_NORMAL) return;
     
-    for (int i = 0; i < sizeof(scancodes) / sizeof(scancodes[0]); i++) 
+    for (unsigned i = 0; i < sizeof(scancodes) / sizeof(scancodes[0]); i++) 
         if (scancodes[i].shift == shift && scancodes[i].scancode == scancode.scancode) {
             chr = scancodes[i].chr;
             waiting = false;
@@ -146,7 +146,7 @@ void dispatch_scancode(ps2_scancode scancode, bool shift) {
         }
 }
 
-void kbd_interrupt(int irq) {
+void kbd_interrupt(int irq, uint32_t) {
     ps2_scancode scancode = ps2_read();
     if (scancode.scancode == 0x12 && (scancode.type & ~PS2_SCANCODE_EXTENDED)) {
         shift = scancode.type != PS2_SCANCODE_BREAK;

@@ -57,7 +57,7 @@ static int malloc_random( int verbose )
 	}
 
 	int transactions = 0;
-	time_t start_time = time(NULL);
+	//time_t start_time = time(NULL);
 
 	int diff = 0;
 	

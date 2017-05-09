@@ -6,6 +6,7 @@
 int_handler interrupt::m_ints[IDT_ENTRY_COUNT];
 int_error_handler interrupt::m_errs[IDT_ENTRY_COUNT];
 irq_handler interrupt::m_irqs[IRQ_COUNT];
+bool interrupt::m_irq_triggered[IRQ_COUNT];
 
 template <int Interrupt, handler_type Type> struct internal_handler {
 public:
@@ -15,17 +16,25 @@ public:
     }
 };
 
+template <> struct internal_handler<0xc8, handler_type::int_noerr> {
+public:
+    static void __attribute__ ((interrupt)) handler(uint32_t *unused) {
+        
+    }
+};
+
 template <int Interrupt> struct internal_handler<Interrupt, handler_type::irq> {
 public:
-    static void __attribute__ ((interrupt)) handler(void *unused) {
+    static void __attribute__ ((interrupt)) handler(uint32_t *unused) {
         if (Interrupt == 7 && !(pic_get_isr() & 0x80)) return;
         if (Interrupt == 15 && !(pic_get_isr() & 0x8000)) {
             io::outb(PIC1_COMMAND, PIC_EOI);
             return;
         }
         pic_eoi(Interrupt);
+        interrupt::m_irq_triggered[Interrupt] = true;
         
-        if (interrupt::m_irqs[Interrupt]) interrupt::m_irqs[Interrupt](Interrupt);
+        if (interrupt::m_irqs[Interrupt]) interrupt::m_irqs[Interrupt](Interrupt, *unused);
     }
 };
 
@@ -44,25 +53,25 @@ public:
         entry->offset_hi = (reinterpret_cast<uint32_t>(internal_handler<Int, Type>::handler) >> 16) & 0xffff;
         entry->selector = 8;
         entry->zero = 0;
-        entry->type_attr = 0x8e;
+        entry->type_attr = Int == 0xc8 ? 0xee : 0x8e;
         
         int_filler<Int + 1, Max, Type>::fill(entry + 1);
     }
 };
 
-template <int Max, handler_type Type> struct int_filler<Max + 1, Max, Type> { public: static void fill(idt_entry *) {}; };
+template <int Max, handler_type Type> struct int_filler<Max, Max, Type> { public: static void fill(idt_entry *) {}; };
 
 template <int From, int To, handler_type Type> struct fill_int {
 public:
     static void go(idt_entry *entries) {
-        int_filler<From, To, Type>::fill(entries + From);
+        int_filler<From, To + 1, Type>::fill(entries + From);
     }
 };
 
 template <int From, int To> struct fill_int<From, To, handler_type::irq> {
 public:
     static void go(idt_entry *entries) {
-        int_filler<From, To, handler_type::irq>::fill(entries + 0x20 + From);
+        int_filler<From, To + 1, handler_type::irq>::fill(entries + 0x20 + From);
     }
 };
 
@@ -73,8 +82,8 @@ void interrupt::init(idt_info *info) {
         interrupt::m_irqs[i] = 0;
     }
         
-    info->idtr.limit = IDT_ENTRY_COUNT * sizeof(idt_entry) - 1;
-    info->idtr.base = reinterpret_cast<uint32_t>(info->entries);
+    info->reg.limit = IDT_ENTRY_COUNT * sizeof(idt_entry) - 1;
+    info->reg.base = reinterpret_cast<uint32_t>(info->entries);
             
     fill_int<0, 7, handler_type::int_noerr>::go(info->entries);
     fill_int<8, 8, handler_type::int_err>::go(info->entries);
@@ -86,13 +95,20 @@ void interrupt::init(idt_info *info) {
     
     fill_int<0, 15, handler_type::irq>::go(info->entries);
     
+    fill_int<0xc7, 0xc8, handler_type::int_noerr>::go(info->entries);
+    
     __asm__ volatile ( "lidt %0\n\
                         in $0x70, %%al\n\
                         and $0x7f, %%al\n\
                         out %%al, $0x70\n\
-                        sti\n" :: "m"(info->idtr));
+                        sti\n" :: "m"(info->reg));
 }
 
 void interrupt::map_irq(int irq, irq_handler handler) {
     interrupt::m_irqs[irq] = handler;
+}
+
+void interrupt::wait_irq(int irq) {
+    interrupt::m_irq_triggered[irq] = false;
+    while (!interrupt::m_irq_triggered[irq]);
 }

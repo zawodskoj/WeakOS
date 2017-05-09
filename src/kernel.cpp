@@ -1,37 +1,26 @@
-#include <stdint.h>
-
-#include <cpp.h>
-#include <init.h>
 #include <ustdio.h>
-#include <os/memory.h>
 
-#include <cstdio>
+#include <os/ata.h>
+#include <os/time.h>
+#include <os/interrupt.h>
 
-#include "malloc_test.inc"
+volatile uint64_t time::m_ticks;
 
-extern "C" {
-    int k_main();
-}
+/*static inline void switch_usermode() {
+    asm volatile ( 
+        "mov $0x23, %ax\n" 
+        "mov %ax, %ds\n" 
+        "mov %ax, %es\n" 
+        "mov %esp, %eax\n" 
+        "push $0x23\n" 
+        "push %eax\n"
+        "pushf\n"
+        "push $0x1b\n"
+        "push $1f\n"
+        "iret\n"
+        "1: \n" );
+}*/
 
-const char *types[] = { "Usable", "Reserved", "ACPI reclaimable", "ACPI NVS", "Bad" };
-
-typedef struct __attribute__((packed)) {
-    uint64_t base;
-    uint64_t page_count;
-    uint32_t type;
-} mem_rgn;
-
-int k_main() {
-    init();
-    
-    // stdio::printf("Zw\n");
-    
-    //for (int i = 0; i < 50; i++)
-    //
-    // stdio::printf("Test: %x\n", memory::alloc_virtual(237));
-    
-    malloc_test(true);
-    
-    // *(char*)0xb8000 = '!';
-    while (1);
+int main() {
+    stdio::printf("Hello!");
 }

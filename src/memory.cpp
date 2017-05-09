@@ -6,9 +6,15 @@ void* memset(void *ptr, int v, size_t size) {
     uint8_t value = v;
     
     uint8_t *cptr = static_cast<uint8_t*>(ptr);
+    
+    if (size < 4) {
+        for (; size > 0; size--) *cptr++ = value;
+        return ptr;
+    }
+    
     uint32_t dvalue = value | (value << 8) | (value << 16) | (value << 24);
     
-    for (; !(reinterpret_cast<uint32_t>(cptr) & 3); cptr++, size--) *cptr = value;
+    for (; !(reinterpret_cast<uint32_t>(cptr) & 3); size--) *cptr++ = value;
     
     uint32_t *dptr = reinterpret_cast<uint32_t*>(cptr);
     for (; size > 4; size -= 4) *dptr++ = dvalue;
@@ -67,7 +73,7 @@ void memory::preinit(mem_info *info) {
     memory::m_rgns = info->virt_rgns;
     memory::load_bios_rgns(info->bios_rgns);
     
-    memset(memory::m_pages, 0, sizeof(uint8_t) * mem_page_count);
+    memset(memory::m_pages, 0, sizeof(uint8_t) * mem_page_count / 8);
     memset(memory::m_rgns, 0, sizeof(mem_virt_rgn) * mem_page_count);
     
     for (int i = 0; i < mem_max_bios_rgns; i++) {
@@ -166,9 +172,9 @@ void* memory::alloc_virtual(uint32_t pages) {
             }
             rgn->type = mem_virt_rgn_type::used;
             
-            for (int i = 0; i < rgn->length; i++) {
+            for (unsigned i = 0; i < rgn->length; i++) {
                 if (!memory::map_page(rgn->base + i)) {
-                    for (int j = 0; j < i; j++)
+                    for (unsigned j = 0; j < i; j++)
                         memory::unmap_page(rgn->base + i);
                     return 0;
                 }
@@ -189,7 +195,7 @@ bool memory::free_virtual(void *ptr) {
     auto rgn = memory::m_first_rgn;
     while (rgn) {
         if (rgn->base == addr && rgn->type == mem_virt_rgn_type::used) { 
-            for (int i = 0; i < rgn->length; i++) memory::unmap_page(rgn->base + i);
+            for (unsigned i = 0; i < rgn->length; i++) memory::unmap_page(rgn->base + i);
             rgn->type = mem_virt_rgn_type::free;
             return true;
         }

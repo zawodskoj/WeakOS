@@ -160,7 +160,7 @@ start32:
 	mov [0b004h], dword 0x8000
 	mov [0b008h], dword 10h
 	mov ax, 28h
-	ltr ax
+; 	; ltr ax
 
     mov esi, 10000h ; загружаем elf
     movzx ecx, word [esi + 44] ; кол-во секций

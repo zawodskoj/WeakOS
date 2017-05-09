@@ -12,6 +12,13 @@ void paging::enable(void *directory) {
         "mov %%eax, %%cr0\n" :: "m"(directory) );
 }
 
+void set_directory(page_directory_entry &pde, uint8_t flags, uint32_t addr) {
+    pde.flags_byte = flags;
+    pde.address = addr;
+}
+
+#define PDE_GENERIC PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB
+
 void paging::init(paging_info *info) {
     for (int i = 0; i < 1024; i++) {
         info->directory[i].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE;
@@ -19,53 +26,23 @@ void paging::init(paging_info *info) {
         info->directory[i].address = reinterpret_cast<uint32_t>(info->tables[i]) >> 12;
     }
     
-    info->directory[0].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[0].address = 0;
-    info->directory[0].i_disabled = 1;
+    set_directory(info->directory[0], PDE_GENERIC,  0);
+    set_directory(info->directory[1], PDE_GENERIC,  PSE_ADDR(0x0800000));
+    set_directory(info->directory[2], PDE_GENERIC,  PSE_ADDR(0x0c00000));
+    set_directory(info->directory[3], PDE_GENERIC,  PSE_ADDR(0x1000000));
+    set_directory(info->directory[4], PDE_GENERIC,  PSE_ADDR(0x1400000));
+    set_directory(info->directory[5], PDE_GENERIC,  PSE_ADDR(0x1800000));
+    set_directory(info->directory[6], PDE_GENERIC,  PSE_ADDR(0x1c00000));
+    set_directory(info->directory[7], PDE_GENERIC,  PSE_ADDR(0x2000000));
+    set_directory(info->directory[8], PDE_GENERIC,  PSE_ADDR(0x2400000));
+    set_directory(info->directory[9], PDE_GENERIC,  PSE_ADDR(0x2800000));
+    set_directory(info->directory[10], PDE_GENERIC, PSE_ADDR(0x2c00000));
+    set_directory(info->directory[11], PDE_GENERIC, PSE_ADDR(0x3000000));
+    set_directory(info->directory[12], PDE_GENERIC, PSE_ADDR(0x3400000));
+    set_directory(info->directory[13], PDE_GENERIC, PSE_ADDR(0x3800000));
+    set_directory(info->directory[14], PDE_GENERIC, PSE_ADDR(0x3c00000));
     
-    info->directory[1].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[1].address = PSE_ADDR(0x2000000);
-    info->directory[1].i_disabled = 1;
-    
-    info->directory[2].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[2].address = PSE_ADDR(0x800000);
-    info->directory[2].i_disabled = 1;
-    
-    info->directory[3].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[3].address = PSE_ADDR(0x1000000);
-    info->directory[3].i_disabled = 1;
-    
-    info->directory[4].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[4].address = PSE_ADDR(0x1400000);
-    info->directory[4].i_disabled = 1;
-    
-    info->directory[5].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[5].address = PSE_ADDR(0x1800000);
-    info->directory[5].i_disabled = 1;
-    
-    info->directory[6].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[6].address = PSE_ADDR(0x1c00000);
-    info->directory[6].i_disabled = 1;
-    
-    info->directory[7].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[7].address = PSE_ADDR(0x2400000);
-    info->directory[7].i_disabled = 1;
-    
-    info->directory[8].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[8].address = PSE_ADDR(0x2800000);
-    info->directory[8].i_disabled = 1;
-    
-    info->directory[9].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[9].address = PSE_ADDR(0x2c00000);
-    info->directory[9].i_disabled = 1;
-    
-    info->directory[10].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[10].address = PSE_ADDR(0xc00000);
-    info->directory[10].i_disabled = 1;
-    
-    info->directory[DIRECTORY_FOR(0xc0000000)].flags_byte = PDE_PRESENT | PDE_WRITEABLE | PDE_USER_VISIBLE | PDE_PAGE_4MB;
-    info->directory[DIRECTORY_FOR(0xc0000000)].address = PSE_ADDR(0x400000);
-    info->directory[DIRECTORY_FOR(0xc0000000)].i_disabled = 1;
+    set_directory(info->directory[DIRECTORY_FOR(0xc0000000)], PDE_GENERIC, PSE_ADDR(0x400000));
     
     paging::enable(&info->directory);
 }

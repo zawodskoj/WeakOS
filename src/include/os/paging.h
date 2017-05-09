@@ -81,7 +81,7 @@ typedef page_directory_entry page_directory[PAGE_DIRECTORY_ENTRY_COUNT];
 typedef page_table_entry page_table[PAGE_TABLE_ENTRY_COUNT] __attribute__ ((__aligned__(0x1000)));
 
 typedef struct {
-    page_directory directory;
+    page_directory directory __attribute__ ((__aligned__(0x1000)));
     page_table tables[PAGE_DIRECTORY_ENTRY_COUNT];
 } paging_info;
 

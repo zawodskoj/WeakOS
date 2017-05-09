@@ -106,7 +106,7 @@ template <> inline void stdio::putval<uint64_t>(const char **format, uint64_t va
             const char *hexAlphaLow = "0123456789abcdef";
             const char *hexAlphaUp = "0123456789ABCDEF";
             
-            const char *hexAlpha = "0123456789ABCDEF"; //**format == 'x' ? hexAlphaLow : hexAlphaUp;
+            const char *hexAlpha = **format == 'x' ? hexAlphaLow : hexAlphaUp;
 
             char str[16];
             int ln = 0;

@@ -1,13 +1,11 @@
+/* Zw: табы пофикшены */
+
 #ifndef _LIBALLOC_H
 #define _LIBALLOC_H
 
-/**/
-
-#include <stddef.h>
-#include <stdint.h>
-#define uintptr_t uint32_t
-
-/**/
+/* Zw: Подключение стдлибы в библиотеке сделать никто не догадался */
+#include <cstddef>
+#include <cstdint>
 
 /** \defgroup ALLOCHOOKS liballoc hooks 
  *
@@ -22,10 +20,13 @@
 
 // If we are told to not define our own size_t, then we skip the define.
 //#define _HAVE_UINTPTR_T
-//typedef	unsigned long	uintptr_t;
+//typedef   unsigned long   uintptr_t;
 
 //This lets you prefix malloc and friends
-#define PREFIX(func)		 func
+
+// Zw: префикс не нужен, определяем стандартные функции
+// #define PREFIX(func)     k ## func
+#define PREFIX(func)        func
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,10 +73,10 @@ extern int liballoc_free(void*,size_t);
 
        
 
-extern void    *PREFIX(malloc)(size_t);				///< The standard function.
-extern void    *PREFIX(realloc)(void *, size_t);		///< The standard function.
-extern void    *PREFIX(calloc)(size_t, size_t);		///< The standard function.
-extern void     PREFIX(free)(void *);					///< The standard function.
+extern void    *PREFIX(malloc)(size_t);             ///< The standard function.
+extern void    *PREFIX(realloc)(void *, size_t);    ///< The standard function.
+extern void    *PREFIX(calloc)(size_t, size_t);     ///< The standard function.
+extern void     PREFIX(free)(void *);               ///< The standard function.
 
 
 #ifdef __cplusplus
@@ -86,5 +87,4 @@ extern void     PREFIX(free)(void *);					///< The standard function.
 /** @} */
 
 #endif
-
 

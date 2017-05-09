@@ -44,17 +44,19 @@ int64_t __divdi3(int64_t dividend, int64_t divisor)
     if (dividend < 0) dividend = -dividend;
     if (divisor < 0) divisor = -divisor;
     
+    uint64_t udividend = dividend, udivisor = divisor;
+    
     uint64_t shift = divisor;
 	uint64_t aux   = divisor;
 
-	while ( shift < dividend && (aux <<= 1) > shift )
+	while ( shift < udividend && (aux <<= 1) > shift )
 		shift = aux;
 
-	for ( aux = 0; shift >= divisor; shift >>= 1 ) {
+	for ( aux = 0; shift >= udivisor; shift >>= 1 ) {
 		aux <<= 1;
-		if ( shift <= dividend ) {
+		if ( shift <= udividend ) {
 			aux++;
-			dividend -= shift;
+			udividend -= shift;
 		}
 	}
     return sig ? -aux : aux;
@@ -66,18 +68,20 @@ int64_t __moddi3(int64_t dividend, int64_t divisor)
     if (dividend < 0) dividend = -dividend;
     if (divisor < 0) divisor = -divisor;
     
+    uint64_t udividend = dividend, udivisor = divisor;
+    
     uint64_t shift = divisor;
     uint64_t aux   = divisor;
 
-    while ( shift < dividend && (aux <<= 1) > shift )
+    while ( shift < udividend && (aux <<= 1) > shift )
         shift = aux;
 
-    for ( aux = 0; shift >= divisor; shift >>= 1 ) {
+    for ( aux = 0; shift >= udivisor; shift >>= 1 ) {
         aux <<= 1;
-        if ( shift <= dividend ) {
+        if ( shift <= udividend ) {
             aux++;
-            dividend -= shift;
+            udividend -= shift;
         }
     }
-    return sig ? -dividend : dividend;
+    return sig ? -udividend : udividend;
 }

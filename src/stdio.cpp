@@ -50,6 +50,9 @@ bool stdio::process_control(char ch) {
             stdio::m_cy++;
             stdio::m_cx = 0;
             break;
+        case '\r':
+            stdio::m_cx = 0;
+            break;
         case '\t':
             stdio::m_cx += 4;
             break;
