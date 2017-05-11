@@ -12,14 +12,7 @@ template <int Interrupt, handler_type Type> struct internal_handler {
 public:
     static void __attribute__ ((interrupt)) handler(uint32_t *unused) {
         stdio::printf("_int %d_ at %x\n", Interrupt, *unused);
-        if (interrupt::m_ints[Interrupt]) interrupt::m_ints[Interrupt](Interrupt);
-    }
-};
-
-template <> struct internal_handler<0xc8, handler_type::int_noerr> {
-public:
-    static void __attribute__ ((interrupt)) handler(uint32_t *unused) {
-        
+        if (interrupt::m_ints[Interrupt]) interrupt::m_ints[Interrupt](Interrupt, *unused);
     }
 };
 
@@ -40,9 +33,9 @@ public:
 
 template <int Interrupt> struct internal_handler<Interrupt, handler_type::int_err> {
 public: 
-    static void __attribute__ ((interrupt)) handler(void *unused, uint32_t error) {
+    static void __attribute__ ((interrupt)) handler(uint32_t *unused, uint32_t error) {
         stdio::printf("_int %d_", Interrupt);
-        if (interrupt::m_errs[Interrupt]) interrupt::m_errs[Interrupt](Interrupt, error);
+        if (interrupt::m_errs[Interrupt]) interrupt::m_errs[Interrupt](Interrupt, *unused, error);
     }
 };
 
@@ -75,7 +68,11 @@ public:
     }
 };
 
+idt_info *idt_m_info;
+
 void interrupt::init(idt_info *info) {
+    idt_m_info = info;
+    
     pic_remap(0x20, 0x28);
     
     for (int i = 0; i < IRQ_COUNT; i++) { 
@@ -85,6 +82,8 @@ void interrupt::init(idt_info *info) {
     info->reg.limit = IDT_ENTRY_COUNT * sizeof(idt_entry) - 1;
     info->reg.base = reinterpret_cast<uint32_t>(info->entries);
             
+#ifndef NO_STD_INT_HANDLERS
+    
     fill_int<0, 7, handler_type::int_noerr>::go(info->entries);
     fill_int<8, 8, handler_type::int_err>::go(info->entries);
     fill_int<9, 9, handler_type::int_noerr>::go(info->entries);
@@ -93,15 +92,25 @@ void interrupt::init(idt_info *info) {
     fill_int<17, 17, handler_type::int_err>::go(info->entries);
     fill_int<18, 19, handler_type::int_noerr>::go(info->entries);
     
-    fill_int<0, 15, handler_type::irq>::go(info->entries);
+#endif
     
-    fill_int<0xc7, 0xc8, handler_type::int_noerr>::go(info->entries);
+    fill_int<0, 15, handler_type::irq>::go(info->entries);
     
     __asm__ volatile ( "lidt %0\n\
                         in $0x70, %%al\n\
                         and $0x7f, %%al\n\
                         out %%al, $0x70\n\
                         sti\n" :: "m"(info->reg));
+}
+
+void interrupt::set_c8(c8_handler c8h) { 
+    idt_entry &entry = idt_m_info->entries[0xc8];
+    
+    entry.offset_lo = reinterpret_cast<uint32_t>(c8h) & 0xffff;
+    entry.offset_hi = (reinterpret_cast<uint32_t>(c8h) >> 16) & 0xffff;
+    entry.selector = 8;
+    entry.zero = 0;
+    entry.type_attr = 0xee;
 }
 
 void interrupt::map_irq(int irq, irq_handler handler) {

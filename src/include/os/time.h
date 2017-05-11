@@ -6,7 +6,7 @@ class time {
 private:
     static volatile uint64_t m_ticks;
     
-    static void irq0_handler(int irq, uint32_t) {
+    static void irq0_handler(int irq, uint32_t&) {
         m_ticks++;
     }
     

@@ -146,7 +146,7 @@ void dispatch_scancode(ps2_scancode scancode, bool shift) {
         }
 }
 
-void kbd_interrupt(int irq, uint32_t) {
+void kbd_interrupt(int irq, uint32_t&) {
     ps2_scancode scancode = ps2_read();
     if (scancode.scancode == 0x12 && (scancode.type & ~PS2_SCANCODE_EXTENDED)) {
         shift = scancode.type != PS2_SCANCODE_BREAK;

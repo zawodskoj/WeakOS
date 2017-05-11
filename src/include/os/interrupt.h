@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#define NO_STD_INT_HANDLERS
+
 typedef struct __attribute__ ((packed)) {
     uint16_t limit;
     uint32_t base;
@@ -24,9 +26,10 @@ typedef struct {
     idt_entry entries[IDT_ENTRY_COUNT];
 } idt_info;
 
-typedef void (*int_handler) (int interrupt);
-typedef void (*int_error_handler) (int interrupt, uint32_t error);
-typedef void (*irq_handler) (int irq, uint32_t eip);
+typedef void (*int_handler) (int interrupt, uint32_t &eip);
+typedef void (*int_error_handler) (int interrupt, uint32_t &eip, uint32_t error);
+typedef void (*irq_handler) (int irq, uint32_t &eip);
+typedef void (*c8_handler) ();
 
 enum struct handler_type { int_noerr, int_err, irq };
 
@@ -47,6 +50,7 @@ public:
     static void map(int interrupt, int_handler handler);
     static void map(int interrupt, int_error_handler handler);
     static void map_irq(int irq, irq_handler handler);
+    static void set_c8(c8_handler c8h);
     
     static void wait_irq(int irq);
 };
