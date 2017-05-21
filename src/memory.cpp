@@ -2,43 +2,11 @@
 #include <os/paging.h>
 #include <ustdio.h>
 
-void* memset(void *ptr, int v, size_t size) {
-    uint8_t value = v;
-    
-    uint8_t *cptr = static_cast<uint8_t*>(ptr);
-    
-    if (size < 4) {
-        for (; size > 0; size--) *cptr++ = value;
-        return ptr;
-    }
-    
-    uint32_t dvalue = value | (value << 8) | (value << 16) | (value << 24);
-    
-    for (; !(reinterpret_cast<uint32_t>(cptr) & 3); size--) *cptr++ = value;
-    
-    uint32_t *dptr = reinterpret_cast<uint32_t*>(cptr);
-    for (; size > 4; size -= 4) *dptr++ = dvalue;
-    
-    cptr = reinterpret_cast<uint8_t*>(dptr);
-    
-    for (; size > 0; cptr++, size--) *cptr = value;
-    
-    return ptr;
-}
 
 uint8_t *memory::m_pages;
 mem_virt_rgn *memory::m_first_rgn;
 mem_virt_rgn *memory::m_rgns;
 paging_info *memory::m_paging;
-
-// TODO переместить нахуй отсюда
-extern "C" void* memcpy(void *dest, const void *src, size_t num) {
-    auto cdest = reinterpret_cast<uint8_t*>(dest);
-    auto csrc = reinterpret_cast<const uint8_t*>(src);
-    
-    for (size_t i = 0; i < num; i++) cdest[i] = csrc[i];
-    return dest;
-}
 
 uint32_t align_down(uint32_t val, uint32_t alignment) {
     return val - (val % alignment);
@@ -138,10 +106,9 @@ bool memory::map_page(uint32_t page) {
         if (memory::m_pages[i / 8] & (1 << (i % 8))) {
             memory::m_pages[i / 8] &= ~(1 << (i % 8));
             ent->address = i;
-            ent->flags_byte = PTE_PRESENT | PTE_WRITEABLE | PTE_USER_VISIBLE;
+            ent->flags_enum = pte_flags::generic_user;
             
             mem_invlpg(page * 0x1000);
-            //stdio::printf("%x -> %x\n", (uint32_t) ent, ent->address);
             return true;
         }
     }
@@ -157,7 +124,7 @@ mem_virt_rgn* get_unused(mem_virt_rgn *rgns) {
 void* memory::alloc_virtual(uint32_t pages) {
     auto rgn = memory::m_first_rgn;
     while (rgn) {
-        // stdio::printf("av memrgn base %x len %x type %d\n", rgn->base, rgn->length, (uint32_t) rgn->type);
+        // stdio::printf("av memrgn base %x len %x type %u\n", rgn->base, rgn->length, (uint32_t) rgn->type);
         if (rgn->type == mem_virt_rgn_type::free && rgn->length >= pages) {
             if (rgn->length > pages) {
                 auto empty = get_unused(memory::m_rgns);
@@ -212,7 +179,7 @@ void memory::disable_virtual(uint32_t addr, uint32_t length) {
     
     auto rgn = memory::m_first_rgn;
     while (rgn) {
-        // stdio::printf("dv memrgn base %x len %x type %d\n", rgn->base, rgn->length, (uint32_t) rgn->type);
+        // stdio::printf("dv memrgn base %x len %x type %u\n", rgn->base, rgn->length, (uint32_t) rgn->type);
         if (rgn->type == mem_virt_rgn_type::disabled || rgn->type == mem_virt_rgn_type::none) goto next;
         if (rgn->base >= addr) { 
             if (rgn->base >= endaddr) goto next;

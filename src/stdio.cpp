@@ -95,6 +95,7 @@ void stdio::getline(char *ch, size_t size) {
     size_t i = 0;
     while (i < size - 1) {
         char c = keyboard::wait_char();
+        stdio::putchar(c);
         if (c == '\n') {
             ch[i] = 0;
             return;

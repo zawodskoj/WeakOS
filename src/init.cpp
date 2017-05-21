@@ -1,28 +1,8 @@
-#include <init.h>
+#include <os/init.h>
 #include <ustdio.h>
 
-#include <os/paging.h>
-#include <os/keyboard.h>
-#include <os/interrupt.h>
-#include <os/memory.h>
-#include <os/ata.h>
-#include <os/time.h>
-#include <os/gdt.h>
-
-#define KERNEL_RESERVED_BYTES 0x800000
-#define KERNEL_STACK_SIZE 0x40000
-
-typedef struct {
-    uint8_t rsvd[KERNEL_RESERVED_BYTES];
-    paging_info paging;
-    idt_info idt;
-    mem_info mem;
-    gdt_info gdt;
-    uint32_t stack[KERNEL_STACK_SIZE];
-} kernel_data;
-
-/*void fix_stack(uint32_t *new_stack) {
-    const int fixup_size = 0x200;
+/*
+     const int fixup_size = 0x200;
     
     uint32_t esp, ebp;
     
@@ -38,7 +18,7 @@ typedef struct {
     
     asm volatile ( "mov %0, %%esp\n"
                    "mov %1, %%ebp\n":: "r"(new_esp), "r"(new_ebp) );
-}*/
+ */
 
 void sysinit() {    
     kernel_data *data = reinterpret_cast<kernel_data*>(0);
@@ -47,7 +27,7 @@ void sysinit() {
     
     stdio::init();
     
-    gdt::init(&data->gdt, data->stack + KERNEL_STACK_SIZE);
+    gdt::init(&data->gdt, data->isr_stack + KERNEL_ISR_STACK_SIZE);
     
     memory::preinit(&data->mem);
     
@@ -55,11 +35,13 @@ void sysinit() {
     
     memory::disable_physical(reinterpret_cast<uint32_t>(data), sizeof(kernel_data));
     memory::disable_virtual(0, 0x40000000);
+    memory::disable_virtual(0x80000000, 0x40000000);
     memory::disable_virtual(0xc0000000, 0x40000000);
     
     interrupt::init(&data->idt);
+    syscall::init();
     keyboard::init();
     
     ata::init();
-    time::init();
+    // time::init();
 }

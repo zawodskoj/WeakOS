@@ -1,149 +1,26 @@
 #include <ustdio.h>
 
-#include <os/ata.h>
-#include <os/time.h>
-#include <os/interrupt.h>
+#include <os/fat.h>
+#include <os/elf.h>
+#include <os/process.h>
+#include <os/syscall.h>
 
-volatile uint64_t time::m_ticks;
+#include <string>
 
-/*static inline void switch_usermode() {
-    asm volatile ( 
-        "mov $0x23, %ax\n" 
-        "mov %ax, %ds\n" 
-        "mov %ax, %es\n" 
-        "mov %esp, %eax\n" 
-        "push $0x23\n" 
-        "push %eax\n"
-        "pushf\n"
-        "push $0x1b\n"
-        "push $1f\n"
-        "iret\n"
-        "1: \n" );
-}*/
-
-#define TASK_STACK_SIZE 0x1000
-
-typedef struct {
-    uint32_t eax;
-    uint32_t ebx;
-    uint32_t ecx;
-    uint32_t edx;
-    uint32_t esi;
-    uint32_t edi;
-    uint32_t esp;
-    uint32_t ebp;    
-    uint32_t eip;
-} reg_values;
-
-typedef struct {
-    reg_values reg;
-    
-    uint8_t stack[TASK_STACK_SIZE];
-} task;
-
-static task tasks[4];
-
-static int task_cnt = 4;
-
-static int cur_task = 0;
-
-void __attribute__ ((naked)) c8_handler_i() {
-    asm volatile (
-        "push %%ebp             \n" /* Cохранение текущей задачи */ "\
-        mov %%esp, %%ebp        \n\
-        sub $20, %%esp          \n\
-        mov %%eax, -4(%%ebp)    \n\
-        mov %%ebx, -8(%%ebp)    \n\
-        mov %%edx, -12(%%ebp)   \n\
-        mov %[tasks], %%ebx     \n\
-        mov %[cur_task], %%eax  \n\
-        mov %[t_sz], %%edx      \n\
-        mov (%%eax), %%eax      \n\
-        mul %%edx               \n\
-        add %%eax, %%ebx        \n\
-        mov -4(%%ebp), %%eax    \n\
-        mov %%eax, (%%ebx)      \n\
-        mov -8(%%ebp), %%eax    \n\
-        mov %%eax, 4(%%ebx)     \n\
-        mov %%ecx, 8(%%ebx)     \n\
-        mov -12(%%ebp), %%eax   \n\
-        mov %%eax, 12(%%ebx)    \n\
-        mov %%esi, 16(%%ebx)    \n\
-        mov %%edi, 20(%%ebx)    \n\
-        mov 8(%%ebp), %%eax     \n\
-        and $3, %%eax           \n\
-        test %%eax, %%eax       \n\
-        jz 1f                   \n\
-        mov 16(%%ebp), %%eax    \n\
-        jmp 2f                  \n\
-        1: mov %%ebp, %%eax     \n\
-        add $16, %%eax          \n\
-        2: mov %%eax, 24(%%ebx) \n\
-        mov (%%ebp), %%eax      \n\
-        mov %%eax, 28(%%ebx)    \n\
-        mov 4(%%ebp), %%eax     \n\
-        mov %%eax, 32(%%ebx)    \n\
-        \
-        " /* Загрузка следующей задачи */ "\
-        mov %[cur_task], %%ecx  \n\
-        mov (%%ecx), %%eax      \n\
-        inc %%eax               \n\
-        xor %%edx, %%edx        \n\
-        mov %[t_count], %%esi   \n\
-        mov (%%esi), %%esi      \n\
-        div %%esi               \n\
-        mov %%edx, (%%ecx)      \n\
-        mov %[tasks], %%ebx     \n\
-        mov %[t_sz], %%eax      \n\
-        xchg %%edx, %%eax       \n\
-        mul %%edx               \n\
-        add %%eax, %%ebx        \n\
-        mov 8(%%ebx), %%ecx     \n\
-        mov 12(%%ebx), %%edx    \n\
-        mov 16(%%ebx), %%esi    \n\
-        mov 20(%%ebx), %%edi    \n\
-        mov 24(%%ebx), %%esp    \n\
-        mov 28(%%ebx), %%ebp    \n\
-        mov 32(%%ebx), %%eax    \n\
-        pushf                   \n\
-        push $8                 \n\
-        push %%eax              \n\
-        mov (%%ebx), %%eax      \n\
-        mov 4(%%ebx), %%ebx     \n\
-        \
-        " /* Возврат */ "\
-        iret"
-        :: [tasks] "i" (tasks), [cur_task] "i" (&cur_task),
-           [t_sz] "i" (sizeof(task)), [t_count] "i" (&task_cnt)
-    );
-}
-
-void __attribute__ ((naked)) yield() { asm volatile ( "int $0xc8\nret\n" ); }
-
-template <int Task> void test_task() { 
-    while (1) { 
-        uint32_t esp;
-        asm volatile (
-            "mov %%esp, %0" : "=m" (esp) );
-        stdio::printf("task %d, esp at this point: %x\n", Task, esp); 
-        yield();
-        stdio::printf("returned to task %d\n", Task);
-        while (1);
-    } 
-}
-
-void mk_task(task &t, void (*fn)()) {
-    t.reg.esp = reinterpret_cast<uint32_t>(t.stack + TASK_STACK_SIZE);
-    t.reg.eip = reinterpret_cast<uint32_t>(fn);
-}
+fat *syscall::xfat;
 
 int main() {
-    interrupt::set_c8(c8_handler_i);
+    syscall::xfat = new fat();
+    uint32_t size = syscall::xfat->get_file_size("test.elf");
+    stdio::printf("elf file size: %u\n", size);
+    uint8_t *elf_data = new uint8_t[size];    
+    syscall::xfat->get_file("testdir/test.elf", elf_data);
+    stdio::printf("loaded!\n");
     
-    mk_task(tasks[0], test_task<0>);
-    mk_task(tasks[1], test_task<1>);
-    mk_task(tasks[2], test_task<2>);
-    mk_task(tasks[3], test_task<3>);
-        
-    test_task<0>();
+    elf *v_elf = new elf(elf_data);
+    process *p = new process(v_elf->m_entry);
+    p->run();
+    
+    //v_elf->run();
+    stdio::printf("done!\n");
 }

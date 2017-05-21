@@ -1,5 +1,5 @@
 #include <cpp/cxxabi.h>
-#include <init.h>
+#include <os/init.h>
 
 atexit_func_entry_t __atexit_funcs[ATEXIT_MAX_FUNCS];
 uarch_t __atexit_func_count = 0;

@@ -31,15 +31,26 @@ sudo losetup -P /dev/loop1 hdd/minios.img
 sync
 
 # форматируем
-# пока не надо
+sudo mkfs.fat -F32 /dev/loop1p2
 
 # заливаем загрузчик
 sudo dd if=bin/stage1 of=/dev/loop1 bs=446 count=1 conv=notrunc > /dev/null
 sudo dd if=bin/stage2 of=/dev/loop1 bs=512 seek=1 count=2047 conv=notrunc > /dev/null
 
-# заливаем ядро и payload
+# заливаем ядро
 sudo dd if=bin/kernel of=/dev/loop1p1 bs=4k conv=notrunc > /dev/null
-# dd if=bin/payload of=/dev/loop1p2 bs=4k conv=notrunc
+
+# временно: заливаем хуйню
+mkdir hdd/shit
+sudo mount /dev/loop1p2 hdd/shit
+sudo cp bin/tools/shell hdd/shit/test.elf
+sudo sh -c 'echo sample text > hdd/shit/test.txt'
+sudo mkdir hdd/shit/testdir
+sudo cp bin/tools/shell hdd/shit/testdir/test.elf
+sudo sh -c 'echo sample text 2 > hdd/shit/testdir/test2.txt'
+sudo sh -c 'echo sample text 3 > hdd/shit/testdir/other_really_big_file_name.txt'
+sudo sh -c 'echo sample text 4 > hdd/shit/really_big_file_name.txt'
+sudo umount /dev/loop1p2
 
 # размонтируем
 sync

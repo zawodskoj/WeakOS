@@ -1,9 +1,11 @@
 #!/bin/bash
 #
 
+set -eu
+
 # подчищаем за предыдущей сборкой
 rm -rf bin obj
-mkdir bin obj obj/kernel obj/tools bin/tools obj/user obj/abi obj/liballoc obj/lib bin/lib
+mkdir bin obj obj/kernel obj/tools bin/tools obj/libc_userspace obj/abi obj/liballoc obj/lib bin/lib
 
 # собираем bootloader
 yasm src/bootloader/stage1.asm -I src/bootloader/ -o bin/stage1
@@ -46,15 +48,17 @@ ld -m elf_i386 -o bin/kernel \
 
 # собираем стдлибу
 
-# cd obj/user
-# clang ../../src/user/*.c --std=c11 -m32 -mno-sse -c -I ../../src/include/
-# cd ../..
+cd obj/libc_userspace
+clang++ ../../src/libc_userspace/*.cpp --std=c++14 -m32 -mno-sse -c -I ../../src/libc_userspace/include
+cd ../..
 
-# собираем тулзы
-# for toolName in `find src/tools/* -type d -printf "%f\n"`; do
-#   mkdir obj/tools/${toolName}
-#   cd obj/tools/${toolName}
-#   clang ../../../src/tools/${toolName}/*.c --std=c11 -m32 -mno-sse -c -I ../../../src/include/
-#   cd ../../..
-#   ld -m elf_i386 -o bin/tools/${toolName} obj/user/*.o obj/tools/${toolName}/*.o -e main -T src/tools/tool.ld
-# done
+#собираем тулзы
+for toolName in `find src/tools/* -type d -printf "%f\n"`; do
+    mkdir obj/tools/${toolName}
+    cd obj/tools/${toolName}
+    clang ../../../src/tools/${toolName}/*.c --std=c11 -m32 -mno-sse -c -I ../../../src/include/
+    cd ../../..
+#    ld -m elf_i386 -o bin/tools/${toolName} obj/tools/${toolName}/*.o -e main -T src/tools/tool.ld
+    ld -m elf_i386 -o bin/tools/${toolName} obj/libc_userspace/*.o obj/tools/${toolName}/*.o -e main -T src/tools/tool.ld
+#    ld -m elf_i386 -o bin/tools/${toolName} obj/user/*.o obj/tools/${toolName}/*.o -e main -T src/tools/tool.ld
+done

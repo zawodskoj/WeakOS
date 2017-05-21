@@ -122,6 +122,8 @@ public:
         info->entries[i++].set(0, 0xffffffff, GDT_PRESENT | GDT_RW | GDT_RING(0), GDT_32BIT | GDT_PAGE_GRANULARITY);
         info->entries[i++].set(0, 0xffffffff, GDT_PRESENT | GDT_EXECUTABLE | GDT_RW | GDT_RING(3), GDT_32BIT | GDT_PAGE_GRANULARITY);
         info->entries[i++].set(0, 0xffffffff, GDT_PRESENT | GDT_RW | GDT_RING(3), GDT_32BIT | GDT_PAGE_GRANULARITY);
+        //info->entries[i++].set(0x40000000, 0xbfffffff, GDT_PRESENT | GDT_EXECUTABLE | GDT_RW | GDT_RING(3), GDT_32BIT | GDT_PAGE_GRANULARITY);
+        //info->entries[i++].set(0x40000000, 0xbfffffff, GDT_PRESENT | GDT_RW | GDT_RING(3), GDT_32BIT | GDT_PAGE_GRANULARITY);
         
         // TSS
         info->entries[i++].set_no1(reinterpret_cast<uint32_t>(info->tss_entries), sizeof(tss_entry) * TSS_ENTRY_COUNT - 1, 

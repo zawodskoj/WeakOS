@@ -4,18 +4,31 @@
 
 #define NO_STD_INT_HANDLERS
 
-typedef struct __attribute__ ((packed)) {
+typedef struct __attribute__((packed)) {
     uint16_t limit;
     uint32_t base;
 } idtr;
 
-typedef struct __attribute__ ((packed)) {
+typedef struct __attribute__((packed)) {
     uint16_t offset_lo;
     uint16_t selector;
     uint8_t zero;
     uint8_t type_attr;
     uint16_t offset_hi;
 } idt_entry;
+
+typedef struct  __attribute__ ((packed)) {
+    uint32_t eip;
+    uint32_t cs;
+    uint32_t eflags;
+    union {
+        struct __attribute__ ((packed)) {
+            uint32_t *esp;
+            uint32_t ss;
+        } user_to_kernel;
+        uint32_t kernel_to_kernel_stack[0];
+    };
+} interrupt_frame;
 
 #define IDT_ENTRY_COUNT 0x100
 
@@ -26,7 +39,8 @@ typedef struct {
     idt_entry entries[IDT_ENTRY_COUNT];
 } idt_info;
 
-typedef void (*int_handler) (int interrupt, uint32_t &eip);
+typedef void (*raw_int_handler) (interrupt_frame *frame);
+typedef void (*int_handler) (int interrupt, interrupt_frame *frame);
 typedef void (*int_error_handler) (int interrupt, uint32_t &eip, uint32_t error);
 typedef void (*irq_handler) (int irq, uint32_t &eip);
 typedef void (*c8_handler) ();
@@ -47,8 +61,7 @@ private:
     template <int Interrupt, handler_type Type> friend struct internal_handler;
 public:
     static void init(idt_info *info);
-    static void map(int interrupt, int_handler handler);
-    static void map(int interrupt, int_error_handler handler);
+    static void set_int(int interrupt, raw_int_handler handler, int rpl);
     static void map_irq(int irq, irq_handler handler);
     static void set_c8(c8_handler c8h);
     

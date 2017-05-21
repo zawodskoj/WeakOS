@@ -182,6 +182,13 @@ template <> inline void stdio::putval<const char*>(const char **format, const ch
     while (*value) stdio::putchar(*value++);
 }
 
+template <> inline void stdio::putval<uint16_t*>(const char **format, uint16_t *value) {
+    if (**format != 's') return;
+    (*format)++;
+    
+    while (*value) stdio::putchar(*value++);
+}
+
 template <> inline void stdio::putval<char*>(const char **format, char *value) {
     stdio::putval(format, const_cast<const char*>(value));
 }

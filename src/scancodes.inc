@@ -47,4 +47,5 @@ static ps2_translated_scancode scancodes[] = {
     { true, 0x49, '>' }, { false, 0x49, '.' },
     { true, 0x4A, '?' }, { false, 0x4A, '/' },
     { true, 0x29, ' ' }, { false, 0x29, ' ' },
+    { true, 0x5A, '\n' }, { false, 0x5A, '\n' },
 }; 
