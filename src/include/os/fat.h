@@ -122,7 +122,7 @@ public:
     }
     
     int get_next_cluster(int cluster) {
-        int fat_index = cluster / FAT_ENTRIES_IN_BLOCK + 1;
+        uint32_t fat_index = cluster / FAT_ENTRIES_IN_BLOCK + 1;
         
         uint32_t min_pop = 0xffffffff;
         int min_pop_blk = 0;

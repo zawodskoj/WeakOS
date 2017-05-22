@@ -1,6 +1,9 @@
 #!/bin/bash
 #
 
+CFLAGS="-m32 -mno-sse -g"
+CXXFLAGS="${CFLAGS} -std=c++14 -c -fno-exceptions -fno-rtti -Wall -Wextra -Wno-unused-parameter"
+
 set -eu
 
 # подчищаем за предыдущей сборкой
@@ -13,8 +16,7 @@ yasm src/bootloader/stage2.asm -I src/bootloader/ -o bin/stage2
 
 # собираем abi
 cd obj/abi
-clang++ ../../src/abi/cpp/*.cpp ../../src/abi/cpp/*.s --std=c++14 -m32 -mno-sse -c -I ../../src/include\
-	-fno-exceptions -fno-rtti -Wall
+clang++ ${CXXFLAGS} ../../src/abi/cpp/*.cpp ../../src/abi/cpp/*.s -I ../../src/include
 cd ../..
 ld -m elf_i386 -o bin/abi.o -r obj/abi/*.o
 
@@ -22,34 +24,50 @@ ld -m elf_i386 -o bin/abi.o -r obj/abi/*.o
 for libname in `find src/lib/* -type d -printf "%f\n"`; do
     mkdir bin/lib/${libname} obj/lib/${libname}
     cd obj/lib/${libname}
-    clang++ ../../../src/lib/${libname}/*.cpp --std=c++14 -m32 -mno-sse -c -I ../../../src/include/ \
-        -fno-exceptions -fno-rtti -Wall
+    clang++ ${CXXFLAGS} ../../../src/lib/${libname}/*.cpp -I ../../../src/include/
     cd ../../..
     ld -m elf_i386 -o bin/lib/${libname}.o -r obj/lib/${libname}/*.o
 done
 
 # собираем ядро
 cd obj/kernel
-clang++ ../../src/*.cpp --std=c++14 -m32 -mno-sse -c -I ../../src/include/ -g\
-	-fno-exceptions -fno-rtti -Wall
+clang++ ${CXXFLAGS} ../../src/*.cpp -I ../../src/include/ -nostdinc++\
+    -I /home/zawodskoj/Projects/libc++/build/include/c++/v1
 cd ../..
+#ld -m elf_i386 -o bin/kernel \
+#    obj/abi/crti.o\
+#    `clang -m32 -print-file-name=crtbegin.o`\
+#    obj/kernel/*.o\
+#    obj/abi/cxa.o obj/abi/new.o obj/abi/integer.o\
+#    bin/lib/*.o\
+#    `clang -m32 -print-file-name=crtend.o`\
+#    obj/abi/crtn.o\
+#    -T src/kernel.ld \
+#    -nostdlib -L/usr/lib/gcc/i686-linux-gnu/5 -lgcc
 ld -m elf_i386 -o bin/kernel \
+    obj/kernel/*.o\
     obj/abi/crti.o\
     `clang -m32 -print-file-name=crtbegin.o`\
-    obj/kernel/*.o\
     obj/abi/cxa.o obj/abi/new.o obj/abi/integer.o\
     bin/lib/*.o\
     `clang -m32 -print-file-name=crtend.o`\
     obj/abi/crtn.o\
+    -rpath /home/zawodskoj/Projects/libc++/build/lib/ \
+    -L/usr/lib/gcc/i686-linux-gnu/5 \
+    -L/usr/lib32 \
+    -L /home/zawodskoj/Projects/libc++/build/lib/ \
+    -Bstatic \
+    -lc++ -lc++abi -lm -lc -lgcc \
     -T src/kernel.ld \
-    -nostdlib -L/usr/lib/gcc/i686-linux-gnu/5 -lgcc
+    -nostdlib \
+    -e main
 
 # strip bin/kernel
 
 # собираем стдлибу
 
 cd obj/libc_userspace
-clang++ ../../src/libc_userspace/*.cpp --std=c++14 -m32 -mno-sse -c -I ../../src/libc_userspace/include
+clang++ ${CXXFLAGS} ../../src/libc_userspace/*.cpp -I ../../src/libc_userspace/include
 cd ../..
 
 #собираем тулзы

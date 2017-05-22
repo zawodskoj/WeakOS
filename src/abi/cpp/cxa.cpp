@@ -1,4 +1,4 @@
-#include <cpp/cxxabi.h>
+/*#include <cpp/cxxabi.h>
 #include <os/init.h>
 
 atexit_func_entry_t __atexit_funcs[ATEXIT_MAX_FUNCS];
@@ -46,13 +46,13 @@ void __cxa_finalize(void *f) {
 }
 
 typedef void __cdecl (*voidfn)();
-
-void __attribute__ ((noreturn)) _start() {
-    sysinit();
+*/
+void __attribute__ ((noreturn)) e_start() {
+/*    sysinit();
     _init();
     ((voidfn)(0xc00000c0))(); // __cxx_global_var_init
     main();
     _fini();
-    __cxa_finalize(0);
+    __cxa_finalize(0);*/
     while (1);
 }

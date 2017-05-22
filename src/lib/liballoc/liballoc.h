@@ -25,8 +25,8 @@
 //This lets you prefix malloc and friends
 
 // Zw: префикс не нужен, определяем стандартные функции
-// #define PREFIX(func)     k ## func
-#define PREFIX(func)        func
+#define PREFIX(func)     k ## func
+// #define PREFIX(func)        func
 
 #ifdef __cplusplus
 extern "C" {
